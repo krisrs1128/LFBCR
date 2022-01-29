@@ -32,17 +32,16 @@ RUN pip3 install tensorboard==2.4.0
 RUN pip3 install zipp==3.1.0
 
 RUN Rscript -e "install.packages('tidyverse', repos='https://cran.us.r-project.org')"
-RUN Rscript -e "install.packages('dplyr', repos='https://cran.us.r-project.org')"
-RUN Rscript -e "install.packages('ggplot2', repos='https://cran.us.r-project.org')"
+RUN Rscript -e "install.packages('expm', repos='https://cran.us.r-project.org')"
+RUN Rscript -e "install.packages('irlba', repos='https://cran.us.r-project.org')"
 RUN Rscript -e "install.packages('devtools', repos='https://cran.us.r-project.org')"
-RUN Rscript -e "install.packages('formatR', repos='https://cran.us.r-project.org')"
-RUN Rscript -e "install.packages('remotes', repos='https://cran.us.r-project.org')"
-RUN Rscript -e "install.packages('selectr', repos='https://cran.us.r-project.org')"
+RUN Rscript -e "install.packages('BiocManager', repos='https://cran.us.r-project.org')"
 
 # installing R
 RUN Rscript -e "BiocManager::install('SingleCellExperiment')"
 RUN Rscript -e "install.packages('pdist', repos='http://cran.us.r-project.org')"
 RUN Rscript -e "install.packages('stars', repos='http://cran.us.r-project.org')"
+RUN Rscript -e "install.packages('reticulate', repos='http://cran.us.r-project.org')"
 
 # go into the repo directory
 RUN . /etc/environment \
@@ -54,5 +53,3 @@ RUN . /etc/environment \
   && R -e "devtools::install('/MSLF', dep=TRUE)" \
   # render the manuscript into a docx, you'll need to edit this if you've
   # customised the location and name of your main Rmd file
-
-
