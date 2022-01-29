@@ -10,10 +10,10 @@ RUN Rscript -e "install.packages('BiocManager', repos='http://cran.us.r-project.
 RUN Rscript -e "install.packages('devtools', repos='http://cran.us.r-project.org')"
 
 # installing python
-#RUN apt install software-properties-common
-#RUN add-apt-repository ppa:deadsnakes/ppa
-#RUN apt-get update
-#RUN apt-get install -y python3.8 python3-pip
+RUN apt install software-properties-common
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt-get update
+RUN apt-get install -y python3.8 python3-pip
 RUN pip3 install numpy jupyterlab
 RUN python3 --version
 RUN pip3 install torch==1.8.2+cu111 torchvision==0.9.2+cu111 -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html
