@@ -1,0 +1,58 @@
+---
+title: "Visualize MIBI"
+output: html_notebook
+params:
+  tnbc_data: "data/stability_data_tnbc.tar.gz"
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lfboot)
+library(purrr)
+library(readr)
+library(reshape2)
+library(reticulate)
+library(stringr)
+np <- import("numpy")
+theme_set(min_theme())
+```
+
+```{r}
+exdir <- str_remove(params$tnbc_data, ".tar.gz")
+untar(params$tnbc_data, exdir = exdir)
+Xy <- read_csv(file.path(exdir, "stability_data", "Xy.csv"), col_types = cols())
+cell_types <- c("B", "CD4", "CD8", "Keratin+ tumor", "Macrophages", "Mesenchymal-like", "Other")
+```
+
+```{r}
+n_patch <- nrow(Xy)
+ix <- order(Xy$y)[seq(1, n_patch, length.out = 16)]
+ims <- map(ix, ~ np$load(file.path(exdir,"stability_data",  Xy$path[.])))
+```
+
+```{r, fig.width = 9, fig.height = 3.5}
+mim <- melt(ims, varnames = c("w", "h", "cell_type")) %>%
+  mutate(cell_type = cell_types[cell_type]) %>%
+  filter(value == 1)
+
+ggplot(mim) +
+  geom_raster(aes(w, h, fill = cell_type)) +
+  coord_fixed() +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_alpha(range = c(0, 1), guide = "none") +
+  scale_fill_brewer(palette = "Set3") +
+  labs(fill = "Cell Type") +
+  facet_wrap(~L1, ncol = 8) +
+  theme(
+    panel.grid = element_blank(),
+    panel.spacing = unit(0, "cm"),
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    legend.position = "bottom"
+  )
+
+ggsave("example_cells.png", dpi = 500)
+```
