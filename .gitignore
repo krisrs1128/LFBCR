@@ -1,0 +1,6 @@
+analysis/data/*/*.tar.gz
+analysis/data/*.tar.gz
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata

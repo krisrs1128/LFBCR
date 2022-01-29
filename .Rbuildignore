@@ -5,3 +5,5 @@
 ^CONTRIBUTING\.md$
 analysis
 ^Dockerfile$
+^.*\.Rproj$
+^\.Rproj\.user$
