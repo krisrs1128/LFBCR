@@ -16,7 +16,7 @@ Title <- "Measuring the Stability of Learned Features"
 
 # MSLF
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/krisrs1128/MSLF/master?urlpath=rstudio)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/krisrs1128/MSLF/main?urlpath=rstudio)
 
 This repository contains the data and code for the preprint online here:
 
