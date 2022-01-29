@@ -1,65 +1,57 @@
 ---
 title: Heatmap of Raw Features
 params:
-  data_dir: "."
+  run: "../../data/raw_data/spatial_process_models/vae-k128-50.yaml_0.tar.gz"
+  out_dir: "../../data/derived_data/vae_heatmap/"
 ---
 
 ```{r}
-library(dplyr)
-library(ggplot2)
-library(readr)
+library(tidyverse)
 library(reticulate)
 library(superheat)
 np <- import("numpy")
-
-dpath <- function(s) {
-  file.path(params$data_dir, s)
-}
 ```
 
 ```{r}
-xy_path <- dir(params$data_dir, "Xy*", recursive = TRUE)[1]
-Xy <- read_csv(dpath(xy_path), col_types = cols())
+dir.create(params$out_dir)
+fdir <- file.path(params$out_dir, "features")
 
-paths_df <- data.frame(
-  subset = rep(c("data/simulation_outputs/model_features/cnn0/features/subset.csv", "data/simulation_outputs/model_features/vae0/features/subset.csv", "data/simulation_outputs/model_features/rcf0/features/subset.csv"), each = 2),
-  feature =  c("data/simulation_outputs/model_features/cnn0/features/linear_best.npy", "data/simulation_outputs/model_features/vae0/features/mu_best.npy", "data/simulation_outputs/model_features/rcf0/features/full_best.npy", "data/simulation_outputs/model_features/cnn1/features/linear_best.npy", "data/simulation_outputs/model_features/vae1/features/mu_best.npy", "data/simulation_outputs/model_features/rcf1/features/full_best.npy")
-)
+untar(params$run, exdir = params$out_dir)
+subset <- read_csv(list.files(fdir, "subset*", full = TRUE))
+Xy <- read_csv(list.files(params$out_dir, "Xy*", full = TRUE)) %>%
+  left_join(subset)
+H_ <- np$load(list.files(fdir, "*best.npy", full = TRUE)) %>%
+  as.data.frame()
 ```
 
-```{r}
-sh <- list()
-for (i in seq_len(nrow(paths_df))) {
-  cur_paths <- read_csv(dpath(paths_df$subset[i])) %>%
-    mutate(ix = row_number()) %>%
-    select(ix, path)
-  H <- Xy %>%
-    filter(path %in% cur_paths$path) %>%
-    left_join(cur_paths) %>%
-    arrange(ix) %>%
-    select(-ix)
+```{r, out.width = 900, out.height = 400}
+cur_paths <- subset %>%
+  mutate(ix = row_number()) %>%
+  select(ix, path)
 
-  H_ <- np$load(dpath(paths_df$feature[i])) %>%
-    as.data.frame()
+H <- Xy %>%
+  filter(path %in% cur_paths$path) %>%
+  left_join(cur_paths) %>%
+  arrange(ix) %>%
+  select(starts_with("X"))
 
-  # some RCF cols have 0 variance, so jitter
+# some RCF cols have 0 variance, so jitter
+if (str_detect(params$run, "rcf")) {
   H_ <- H_ + matrix(runif(prod(dim(H_)), -0.1, 0.1), nrow(H_), ncol(H_))
-
-  png(sprintf("sh_%s.png", i), width=900, height=400)
-  superheat(
-    t(cor(H_, H[, -1])),
-    pretty.order.rows = FALSE,
-    pretty.order.cols = TRUE,
-    bottom.label = "none",
-    heat.pal = c("#822233", "#F7F7F7", "#497b95"),
-    col.dendrogram = TRUE,
-    heat.pal.values = c(0, .5, 1),
-    left.label.text.size = 6,
-    left.label.size = 0.15,
-    grid.hline = FALSE,
-    grid.vline = FALSE,
-    legend = FALSE,
-  )
-  dev.off()
 }
+
+superheat(
+  t(cor(H_, H[, -1])),
+  pretty.order.rows = FALSE,
+  pretty.order.cols = TRUE,
+  bottom.label = "none",
+  heat.pal = c("#822233", "#F7F7F7", "#497b95"),
+  col.dendrogram = TRUE,
+  heat.pal.values = c(0, .5, 1),
+  left.label.text.size = 6,
+  left.label.size = 0.15,
+  grid.hline = FALSE,
+  grid.vline = FALSE,
+  legend = FALSE,
+)
 ```

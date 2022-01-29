@@ -1,0 +1,90 @@
+---
+title: "R Notebook"
+output: html_notebook
+params:
+  raw_dir: "../../data/raw_data/spatial_process_models/"
+  derived_dir: "../../data/derived_data/spatial_process_models/"
+  subset: "vae-k64-90"
+  B: 100
+  transform: "none"
+  K: 2
+---
+
+```{r, echo = FALSE}
+library(knitr)
+opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+This script takes learned features from one training run and generates a
+visualization of feature stability using a parametric bootstrap model (give the
+formulation). The inputs are,
+
+```{r}
+set.seed(1234)
+library(tidyverse)
+library(MSLF)
+library(reticulate)
+np <- import("numpy")
+theme_set(min_theme())
+```
+
+```{r}
+model_paths <- list.files(params$raw_dir, str_c(params$subset, "*"), full = TRUE)
+derived_dir <- file.path(params$derived_dir, params$subset)
+dir.create(derived_dir, recursive = TRUE)
+untar_all(model_paths, derived_dir)
+```
+
+```{r}
+Zb <- read_learned_features(derived_dir, "*best.npy", params$transform)
+ix <- read_split_indices(file.path(params$derived_dir, params$subset))
+```
+
+The nonparametric approach.
+
+```{r}
+Zb_ <- Zb %>%
+  map(~ .[ix$split %in% c("test", "dev"), ]) %>%
+  map(~ {
+    svf <- svd(.) 
+    svf$u[, 1:params$K] %*% diag(svf$d[1:params$K])
+  })
+
+ud_hats <- align_to_list(Zb_) %>%
+  map_dfr(~ data.frame(.), .id = "b") %>%
+  group_by(b) %>%
+  mutate(i = row_number(), subset = params$subset, bootstrap = "nonparametric") %>%
+  left_join(ix %>% filter(split %in% c("test", "dev")) %>% mutate(i = row_number()))
+write_csv(ud_hats, str_c(params$derived_dir, "/", params$subset, "_nonparametric.csv"))
+```
+
+The parametric approach.
+
+```{r}
+Zb_ <- Zb[[1]][ix$split %in% c("test", "dev"), ]
+boot_fun <- param_boot(Zb_)
+ud_hats <- rerun(params$B, boot_fun()$ub) %>%
+  align_to_list(df = F) %>%
+  map_dfr(~ data.frame(.), .id = "b") %>%
+  group_by(b) %>%
+  mutate(i = row_number(), subset = params$subset, bootstrap = "parametric") %>%
+  left_join(ix %>% filter(split %in% c("test", "dev")) %>% mutate(i = row_number()))
+write_csv(ud_hats, str_c(params$derived_dir, "/", params$subset, "_parametric.csv"))
+```
+
+The compromise approach.
+
+```{r}
+Zb_ <- Zb %>%
+  map(~ .[ix$split %in% c("test", "dev"), ])
+boot_fun <- param_boot_cmp(Zb_)
+ud_hats <- rerun(params$B, boot_fun()$ub) %>%
+  align_to_list() %>%
+  map_dfr(~ data.frame(.), .id = "b") %>%
+  group_by(b) %>%
+  mutate(i = row_number(), subset = params$subset, bootstrap = "compromise") %>%
+  left_join(ix %>% filter(split %in% c("test", "dev"))) 
+write_csv(ud_hats, str_c(params$derived_dir, "/", params$subset, "_compromise.csv"))
+```
+
+To visualize these outputs, go to...

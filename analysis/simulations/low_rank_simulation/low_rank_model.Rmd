@@ -1,24 +1,24 @@
 ---
 title: "R Notebook"
 output: html_notebook
+params:
+  B: 1000 # number of bootstraps
+  N: 1000 # number of samples
+  D: 100 # dimensionality
+  K: 2 # latent dimensionality
 ---
 
 ```{r}
 set.seed(1234)
-library(dplyr)
 library(expm)
 library(irlba)
-library(ggplot2)
-library(purrr)
-library(lfboot)
-source("visualization_functions.R")
+library(tidyverse)
+library(MSLF)
 theme_set(min_theme())
+attach(params)
 ```
+
 ```{r}
-B <- 1000
-N <- 1000
-D <- 100
-K <- 2
 U <- r_ortho(N, D)
 V <- r_ortho(D, D)
 Sigma <- c(rep(100, 2), rep(0.0, D - K))
@@ -40,11 +40,6 @@ ud_combined[["parametric"]] <- align_with_truth(ud_hats, U, Sigma) %>%
   left_join(data.frame(i = seq_along(y), y = y))
 ```
 
-```{r}
-contained <- coverage(ud_combined[[1]] %>% filter(b < B + 1),  ud_combined[[1]] %>% filter(b == B + 1))
-mean(contained)
-```
-
 What if we instead extract $B$ sets of features?
 
 ```{r}
@@ -59,11 +54,6 @@ ud_combined[["nonparametric"]] <- align_with_truth(ud_hats, U, Sigma) %>%
   left_join(data.frame(i = seq_along(y), y = y))
 ```
 
-```{r}
-contained <- coverage(ud_combined[[2]] %>% filter(b < max(b)),  ud_combined[[2]] %>% filter(b == max(b)))
-mean(contained)
-```
-
 Here is a kind of compromise between repeated feature learning and a parametric
 bootstrap. The simulated samples are somewhat complicated (projected mixtures,
 it seems like). But it is computationally simpler and does seem more honest than
@@ -72,24 +62,26 @@ not using any feature relearning.
 ```{r}
 f <- features(X)
 Zb <- rerun(100, f(X))
-boot_fun <- param_boot_ft(Zb)
+boot_fun <- param_boot_cmp(Zb)
 ud_hats <- rerun(B, boot_fun()$ub) %>%
   align_to_list()
 ud_combined[["compromise"]] <- align_with_truth(ud_hats, U, Sigma) %>%
-  left_join(data.frame(i = seq_along(y), y = y))
+  left_join(data.frame(i = seq_along(y), y = y)) # adds a new list element with the aligned truth
 ```
 ```{r}
 contained <- coverage(ud_combined[[3]] %>% filter(b < max(b)),  ud_combined[[3]] %>% filter(b == max(b)))
 mean(contained)
 ```
 
+```{r}
+map(ud_combined, ~ {
+  coverage(filter(., b < max(b)), filter(., b == max(b))) %>%
+    mean()
+})
+```
+
 ```{r, width=6, height=1.6}
-plot_overlay(bind_rows(ud_combined, .id = "bootstrap") %>% mutate(bootstrap = factor(bootstrap, levels = c("parametric", "nonparametric", "compromise"))), 100) +
-  facet_wrap(~ bootstrap, scales = "free") +
-  labs(x = "Aligned Scores 1", y = "Aligned Scores 2") +
-  theme(
-    axis.text = element_text(size = 10),
-    axis.title = element_text(size = 12),
-    strip.text = element_text(size = 14)
-  )
+bind_rows(ud_combined, .id = "bootstrap") %>% 
+  mutate(bootstrap = factor(bootstrap, levels = c("parametric", "nonparametric", "compromise"))) %>%
+   plot_overlay_truth(100)
 ```
