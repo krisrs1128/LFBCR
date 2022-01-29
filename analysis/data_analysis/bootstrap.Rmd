@@ -2,9 +2,9 @@
 title: "R Notebook"
 output: html_notebook
 params:
-  raw_dir: "../../data/raw_data/spatial_process_models/"
-  derived_dir: "../../data/derived_data/spatial_process_models/"
-  subset: "vae-k64-90"
+  raw_dir: "../data/raw_data/tnbc_models/"
+  derived_dir: "../data/derived_data/tnbc_models/"
+  subset: "tnbc_vae-k128"
   B: 100
   transform: "none"
   K: 2
@@ -54,7 +54,7 @@ ud_hats <- align_to_list(Zb_) %>%
   map_dfr(~ data.frame(.), .id = "b") %>%
   group_by(b) %>%
   mutate(i = row_number(), subset = params$subset, bootstrap = "nonparametric") %>%
-  left_join(ix %>% filter(split %in% c("test", "dev")) %>% mutate(i = row_number()))
+  left_join(ix %>% filter(split %in% c("test", "dev")) %>% mutate(i = row_number())) 
 write_csv(ud_hats, str_c(params$derived_dir, "/", params$subset, "_nonparametric.csv"))
 ```
 
@@ -83,7 +83,7 @@ ud_hats <- rerun(params$B, boot_fun()$ub) %>%
   map_dfr(~ data.frame(.), .id = "b") %>%
   group_by(b) %>%
   mutate(i = row_number(), subset = params$subset, bootstrap = "compromise") %>%
-  left_join(ix %>% filter(split %in% c("test", "dev")) %>% mutate(i = row_number()))
+  left_join(ix %>% filter(split %in% c("test", "dev")) %>% mutate(i = row_number())) 
 write_csv(ud_hats, str_c(params$derived_dir, "/", params$subset, "_compromise.csv"))
 ```
 

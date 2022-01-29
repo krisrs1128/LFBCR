@@ -1,0 +1,113 @@
+---
+title: "R Notebook"
+output: html_notebook
+params:
+  derived_dir: "../data/derived_data/tnbc_models"
+  raw_dir: "../data/raw_data/stability_data/" # unzipped stability_data_tnbc.tar.gz
+  figure_dir: "../figures/"
+---
+
+```{r}
+library(MSLF)
+library(tidyverse)
+library(reticulate)
+theme_set(min_theme())
+
+# links K's if they correspond to the same overall model complexity
+expand_k <- function(k) {
+  if (k == 32) {
+    k_ <- c(32, 256)
+  } else if (k == 64) {
+    k_ <- c(64, 512)
+  } else if (k == 128) {
+    k_ <- c(128, 1024)
+  }
+  
+  k_
+}
+```
+
+```{r}
+paths <- list.files(params$derived_dir, "*.csv", full = TRUE)
+coordinates <- map_dfr(paths, ~ read_csv(.), .id = "path") %>%
+  mutate(
+    path = paths[as.integer(path)],
+    model = str_extract(basename(path), "[A-z]+"),
+    k = str_extract(path, "k[0-9]+"),
+    k = as.integer(str_remove(k, "k")),
+    s = str_extract(path, "-[0-9]+_"),
+    s = str_remove(s, "-"),
+    s = as.integer(str_remove(s, "_")),
+    bootstrap = str_extract(path, "[A-z]+.csv"),
+    bootstrap = str_remove(bootstrap, ".csv"),
+    bootstrap = str_remove(bootstrap, "_"),
+    bootstrap = factor(bootstrap, levels = c("parametric", "nonparametric", "compromise")),
+    X1 = ifelse(bootstrap == "nonparametric" & str_detect(model, "rcf"), X1 + runif(n(), -0.01, 0.01), X1),
+    X2 = ifelse(bootstrap == "nonparametric" & str_detect(model, "rcf"), X2 + runif(n(), -0.01, 0.01), X2),
+  ) %>%
+  group_by(bootstrap, model, k, s)
+
+means <- coordinates %>%
+  group_by(i, bootstrap, model, s, k) %>%
+  summarise(across(starts_with("X"), mean), y = y[1])
+```
+
+```{r}
+for (s_ in c(15, 50, 90)) {
+  for (k_ in c(32, 64, 128)) {
+    cur_data <- coordinates %>%
+      filter(s == s_, k %in% expand_k(k_)) %>%
+      mutate(model = factor(model, levels = c("tnbc_cnn", "tnbc_vae", "tnbc_rcf")))
+    if (nrow(cur_data) > 0) { # check in case current model / data subset is not yet run
+      coordinates %>%
+        plot_overlay_combined(means %>% filter(s == s_, k %in% expand_k(k_))) +
+        labs(x = "Dimension 1", y = "Dimension 2") +
+        facet_wrap(model ~ bootstrap, scale = "free", ncol = 3)
+      ggsave(str_c(params$figure_dir, "/", s_, "_", k_, "_", "coordinates.png"), dpi = 600, height = 6, width = 4)
+    }
+  }
+}
+
+for (m in c("tnbc_vae", "tnbc_cnn", "tnbc_rcf")) {
+  for (bt in c("nonparametric", "parametric", "compromise")) {
+    cur_data <- coordinates %>%
+      filter(bootstrap == bt, model == m)
+    if (nrow(cur_data) > 0) { # check in case current model / data subset is not yet run
+      cur_data %>%
+        plot_overlay_combined(means %>% filter(bootstrap == bt, model == m)) +
+        labs(x = "Dimension 1", y = "Dimension 2") +
+        facet_wrap(model ~ k, ncol = 3, scale = "free")
+      ggsave(str_c(params$figure_dir, "/", m, "_", bt, "_", "coordinates.png"), dpi = 600, height = 6, width = 4)
+    }
+  }
+}
+```
+
+```{r, fig.height = 8}
+ix <- read_split_indices(file.path(params$derived_dir))
+models <- c("tnbc_cnn", "tnbc_vae", "tnbc_rcf")
+sizes <- c(0.3, 0.1, 50)
+min_dists <- c(0.1, 0.1, 100)
+for (mi in seq_along(models)) {
+  tmp <- means %>%
+    filter(bootstrap == "nonparametric", k %in% c(128, 1024), model == models[mi]) %>%
+    left_join(coordinates %>% ungroup() %>% select(i, ix) %>% unique())
+  if (nrow(tmp) == 0) next
+  
+  paths <- tmp %>%
+    select(ix) %>%
+    left_join(ix %>% select(ix, path)) %>%
+    pull(path)
+  paths <- file.path(params$raw_dir, paths)
+  
+  tmp %>%
+    ungroup() %>%
+    select(X1, X2) %>%
+    rename(x = X1, y = X2) %>%
+    image_grid(paths, imsize = sizes[mi], density = 20, min_dist = min_dists[mi]) +
+    labs(x = "Dimension 1", y = "Dimension 2")
+  ggsave(str_c(params$figure_dir, "/image_grid_", models[mi], ".png"), dpi = 150, width = 12, height = 9)
+}
+
+```
+
