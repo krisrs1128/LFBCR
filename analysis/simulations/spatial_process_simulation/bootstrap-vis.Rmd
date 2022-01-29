@@ -77,7 +77,6 @@ for (m in c("vae", "cnn", "rcf")) {
         facet_wrap(k ~ s, ncol = 3, scale = "free")
       ggsave(str_c(params$derived_dir, "/", m, "_", bt, "_", "coordinates.png"), dpi = 600, height = 6, width = 4)
     }
-      
   }
 }
 ```
