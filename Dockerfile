@@ -11,7 +11,7 @@ RUN Rscript -e "install.packages('devtools', repos='http://cran.us.r-project.org
 
 # installing python
 RUN apt-get update
-RUN apt install software-properties-common
+RUN apt install -y software-properties-common
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get update
 RUN apt-get install -y python3.8 python3-pip
