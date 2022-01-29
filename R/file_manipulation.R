@@ -12,7 +12,7 @@ untar_all <- function(paths, exdir = "archive") {
 #' @importFrom purrr map
 #' @export
 read_learned_features <- function(data_dir, layer_prefix, transform) {
-  z_paths <- list.files(file.path(input_dir, subset), layer_prefix, recursive = T, full = T)
+  z_paths <- list.files(data_dir, layer_prefix, recursive = TRUE, full = TRUE)
   f <- ifelse(transform == "log", function(x) log(1 + x), identity)
   map(z_paths, ~ f(drop(np$load(.))))
 }

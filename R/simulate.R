@@ -29,3 +29,16 @@ random_permutation <- function(K) {
   
   pi_mat
 }
+
+#' @importFrom magrittr %>%
+#' @importFrom dplyr bind_rows group_by ungroup mutate row_number
+#' @export
+align_with_truth <- function(ud_hats, U, Sigma, tol = 0.01) {
+  c(ud_hats, list(U %*% diag(Sigma))) %>%
+    align_to_list(tol = tol, df = T) %>%
+    bind_rows(.id = "b") %>%
+    group_by(b) %>%
+    mutate(i = row_number()) %>%
+    ungroup() %>%
+    mutate(b = as.integer(b))
+}

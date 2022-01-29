@@ -97,6 +97,8 @@ procrustes <- function(x_list, tol = 0.001, max_iter=100) {
   list(x_align = x_align, M = M)
 }
 
+#' @importFrom magrittr %>%
+#' @export
 align_to_list <- function(Zb, df = F, tol = 0.01) {
   procrustes(Zb, tol = tol) %>%
     .[["x_align"]] %>%
