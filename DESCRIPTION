@@ -1,12 +1,16 @@
 Package: MSLF
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: Package accompanying "Measuring the Stability of Learned Features"
+Version: 0.1
 Authors@R:
-    person(given = "First",
-           family = "Last",
+    person(given = "Kris",
+           family = "sankaran",
            role = c("aut", "cre"),
-           email = "first.last@example.com")
-Description: What the package does (one paragraph).
+           email = "ksankaran@wisc.edu")
+Description: This package includes code for reproducing all analysis in the preprint "Measuring the Stability of Learned Features."
+  Specifically, it includes Rmarkdown scripts for performing bootstrap analysis of learned feature embeddings, an R package with the
+  more generic functions used in that analysis, and python code for training feature extractors. The data are not included in the 
+  package due to size constraints, but a link for downloading both the raw data and the intermediate feature extractions is given in 
+  the README.md of the data folder.
 License: CC BY 4.0
 ByteCompile: true
 Encoding: UTF-8
