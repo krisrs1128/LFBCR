@@ -1,0 +1,141 @@
+---
+title: "Data Generation Mechanism"
+output: html_notebook
+---
+
+```{r}
+library("dplyr")
+library("ggplot2")
+library("inference")
+library("readr")
+theme_set(theme_bw() + theme(panel.grid=element_blank()))
+```
+
+Let's think about how we want to link the parameters of image generation to
+something like a survival time. This is a specification of all the parameters.
+
+```{r}
+x <- expand.grid(seq(0.1, 1, 0.05), seq(0.1, 1, 0.05))
+n_original <- 100 # number of points
+beta_r <- c(-0.5, 0, 0.5)
+nu_r <- 1 # smoothness of the relative intensity functions (higher is smoother)
+alpha_r <- 0.5 # bandwidth of the relative processes (higher is smoother)
+nu <- 2 # smoothness of the overall process
+alpha <- 2 # bandwidth of the overall process
+tau <- 1.5 # temperature for the marking (0 -> uniform, inf -> hard assignment)
+lambdas <- c(20, 50, 100) # rate parameters in gamma controlling size
+```
+
+```{r, fig.width = 7, fig.height = 3}
+set.seed(10)
+result <- sim_wrapper(x, n_original, nu, alpha, beta_r, nu_r, alpha_r, tau, lambdas)
+plot_matern(result)
+```
+
+# Simulating Images
+
+We've sanity checked what all the images look like, when we vary the simulation
+parameters. Let's have a way of relating these parameters to an ``outcome''
+associated with each image "look." We'll make these assumptions,
+
+* More mixing between cell types is associated with better outcomes
+* Less uniform distribution in cell densities is associated with worse outcomes.
+* More of the first cell type is better for outcomes, more of the other two is bad.
+* larger of the first cell type is better for outcomes
+
+In particular, we'll make up this equation, for some hypothetical outcome y,
+
+ y =  (beta_r[1] - beta_r[2] - beta_r[3]) / 3 + (nu_r + alpha_r + nu + alpha) / 4 - tau + (lambdas[1] - 50) / 100 + noise
+
+so that the signs are in the intuitive direction and so that no one group of
+terms dominates. We'll consider modulating the noise level to gauge the
+sensitivity of different approaches.
+
+We'll generate the parameters according to a few different distributions (though
+they won't be too wild), depending on whether they are allowed to be negative.
+
+```{r}
+n_images <- 1e4
+n_original <- runif(n_images, 50, 1000)
+beta_r <- 0.3 * runif(n_images * 3, -.5, .5) %>%
+  matrix(ncol = 3)
+nu_r <- runif(n_images, 0, 3)
+alpha_r <- runif(n_images, 0, 3)
+nu <- runif(n_images, 0, 8) # overall process is (usually) smoother
+alpha <- runif(n_images, 0, 8)
+tau <- runif(n_images, 0, 3)
+lambdas <- runif(n_images * 3, 100, 500) %>%
+  matrix(ncol = 3)
+
+# simulate the response
+X <- scale(cbind(n_original, beta_r, nu_r, alpha_r, nu, alpha, tau, lambdas[, 1]))
+colnames(X) <- c("N", paste0("beta_", 1:ncol(beta_r)), "nu_r", "alpha_r", "nu", "alpha", "tau", "lambda_1")
+y <- X %*% c(.5, 1, -1, -1, -.5, -.5, -.5, -.5, .5, 1) / sqrt(ncol(X))
+y <- y - mean(y)
+```
+
+```{r, eval = FALSE}
+plot_ix <- order(y)[c(1:2, c(4998, 5004), c(9998, 10000))]
+plot_list <- list()
+raster_list <- list()
+
+for (i in seq_along(plot_ix)) {
+  j <- plot_ix[i]
+  res <- sim_wrapper(x, n_original[j], nu[j], alpha[j], beta_r[j, ], nu_r[j], alpha_r[j], tau[j], lambdas[j, ])
+  raster_list[[i]] <- plot_raster(make_raster(res$marks, 3))
+  plot_list[[i]] <- plot_matern(res)
+}
+```
+
+
+```{r, eval = FALSE, fig.height = 5, fig.width = 10}
+library("gridExtra")
+grid.arrange(
+  plot_list[[1]], raster_list[[1]],
+  plot_list[[2]], raster_list[[2]],
+  plot_list[[3]], raster_list[[3]],
+  plot_list[[4]], raster_list[[4]],
+  plot_list[[5]], raster_list[[5]],
+  plot_list[[6]], raster_list[[6]],
+  ncol = 4,
+  widths = c(4, 1, 4, 1)
+)
+```
+
+
+Let's create the directory within which to save our results.
+
+```{r}
+tiles_dir <- file.path("tiles")
+dir.create(tiles_dir)
+```
+
+Now we can simulate all the images.
+
+```{r}
+# can convert foreach into a standard for loop if no parallel backend
+library("parallel")
+library("doParallel")
+library("foreach")
+cl <- makeCluster(12)
+registerDoParallel(cl)
+
+pkgs <- c("inference", "dplyr", "MASS", "stringr", "sf", "raster", "reticulate")
+paths <- foreach(j = seq_len(n_images), .combine = c, .packages = pkgs) %dopar% {
+  # generate the shapefile representing cells
+  result <- sim_wrapper(x, n_original[j], nu[j], alpha[j], beta_r[j, ], nu_r[j],
+                        alpha_r[j], tau[j], lambdas[j, ])
+  marks <- result$marks %>%
+    mutate(variable = paste0("X", mark))
+  
+  # convert to raster and save as numpy
+  path <- sprintf(file.path(tiles_dir, "image-%s.npy"), str_pad(j, 4, "left", 0))
+  r <- make_raster(marks, 3)
+  np <- reticulate::import("numpy")
+  np$save(path, as.array(r))
+  return(path)
+}
+stopCluster(cl)
+
+write_csv(data.frame(path = paths, X = X, y = y), file.path("Xy.csv"))
+```

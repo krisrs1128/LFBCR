@@ -1,0 +1,95 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+set.seed(1234)
+library(dplyr)
+library(expm)
+library(irlba)
+library(ggplot2)
+library(purrr)
+library(lfboot)
+source("visualization_functions.R")
+theme_set(min_theme())
+```
+```{r}
+B <- 1000
+N <- 1000
+D <- 100
+K <- 2
+U <- r_ortho(N, D)
+V <- r_ortho(D, D)
+Sigma <- c(rep(100, 2), rep(0.0, D - K))
+X <- U %*% diag(Sigma) %*% t(V) + rmat(N, D, 0.1)
+beta <- c(c(1, -1), rep(0, D - K))
+y <- U %*% diag(sqrt(Sigma)) %*% beta + rnorm(N, 0, .1)
+```
+
+Here is the strategy that extracts the features once and then applies a
+parametric bootstrap according to the assumed model.
+
+```{r}
+f <- features(X)
+boot_fun <- param_boot(f(X), K)
+ud_hats <- rerun(B, boot_fun()$ub) %>%
+  align_to_list(df = F)
+ud_combined <- list()
+ud_combined[["parametric"]] <- align_with_truth(ud_hats, U, Sigma) %>%
+  left_join(data.frame(i = seq_along(y), y = y))
+```
+
+```{r}
+contained <- coverage(ud_combined[[1]] %>% filter(b < B + 1),  ud_combined[[1]] %>% filter(b == B + 1))
+mean(contained)
+```
+
+What if we instead extract $B$ sets of features?
+
+```{r}
+f <- features(X)
+Zb <- rerun(B, {
+  full_features <- f(X)
+  svf <- irlba(full_features, nv=K) 
+  svf$u %*% diag(svf$d)
+})
+ud_hats <- align_to_list(Zb)
+ud_combined[["nonparametric"]] <- align_with_truth(ud_hats, U, Sigma) %>%
+  left_join(data.frame(i = seq_along(y), y = y))
+```
+
+```{r}
+contained <- coverage(ud_combined[[2]] %>% filter(b < max(b)),  ud_combined[[2]] %>% filter(b == max(b)))
+mean(contained)
+```
+
+Here is a kind of compromise between repeated feature learning and a parametric
+bootstrap. The simulated samples are somewhat complicated (projected mixtures,
+it seems like). But it is computationally simpler and does seem more honest than
+not using any feature relearning.
+
+```{r}
+f <- features(X)
+Zb <- rerun(100, f(X))
+boot_fun <- param_boot_ft(Zb)
+ud_hats <- rerun(B, boot_fun()$ub) %>%
+  align_to_list()
+ud_combined[["compromise"]] <- align_with_truth(ud_hats, U, Sigma) %>%
+  left_join(data.frame(i = seq_along(y), y = y))
+```
+```{r}
+contained <- coverage(ud_combined[[3]] %>% filter(b < max(b)),  ud_combined[[3]] %>% filter(b == max(b)))
+mean(contained)
+```
+
+```{r, width=6, height=1.6}
+plot_overlay(bind_rows(ud_combined, .id = "bootstrap") %>% mutate(bootstrap = factor(bootstrap, levels = c("parametric", "nonparametric", "compromise"))), 100) +
+  facet_wrap(~ bootstrap, scales = "free") +
+  labs(x = "Aligned Scores 1", y = "Aligned Scores 2") +
+  theme(
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    strip.text = element_text(size = 14)
+  )
+```
