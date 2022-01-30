@@ -1,9 +1,21 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "Visualize Projection Uncertainty for the Spatial Process Simulation"
+output: html_document
 params:
   derived_dir: "../../data/derived_data/spatial_process_models"
+  figure_dir: "../../figures/"
 ---
+
+This notebook reproduces Figures 5, assuming that projections have been
+generated using the `bootstrap.Rmd` (for all panels in the figure) and saved as
+csv's to the `derived_dir` directory. For example, for a panel of VAE
+projections for a model with $K = 64$, you should see files like
+`vae-k64-50.csv` and `vae-k64-50.csv`.
+
+The block below loads relevant libraries and defines a function that is used to
+match models of comparable complexity across the CNN, VAE, and RCF. E.g., a
+model with $K = 128$ for the CNN or VAE corresponds to a model of size $K =
+1024$ in the RCF.
 
 ```{r}
 library(MSLF)
@@ -25,6 +37,10 @@ expand_k <- function(k) {
 }
 ```
 
+The block below reads in projections from each of the subsets and then parses
+the filenames to figure out which type of subset it was (e.g., is it from a VAE
+or a CNN?). This is used to arrange the projections onto separate facets.
+
 ```{r}
 paths <- list.files(params$derived_dir, "*.csv", full = TRUE)
 coordinates <- map_dfr(paths, ~ read_csv(.), .id = "path") %>%
@@ -42,13 +58,13 @@ coordinates <- map_dfr(paths, ~ read_csv(.), .id = "path") %>%
     bootstrap = factor(bootstrap, levels = c("parametric", "nonparametric", "compromise")),
     X1 = ifelse(bootstrap == "nonparametric" & str_detect(model, "rcf"), X1 + runif(n(), -0.01, 0.01), X1),
     X2 = ifelse(bootstrap == "nonparametric" & str_detect(model, "rcf"), X2 + runif(n(), -0.01, 0.01), X2),
-  ) %>%
-  group_by(bootstrap, model, k, s)
-
-means <- coordinates %>%
-  group_by(i, bootstrap, model, s, k) %>%
-  summarise(across(starts_with("X"), mean), y = y[1])
+  )
 ```
+
+The block below generates a set of projection images and places them in the
+`figure_dir` directory. We first filter on `s` and `k` and facet by `model ~
+bootstrap`, like in Figure 5a. Then, we filter by model and bootstrap and
+compare across `s ~ k`, like in Figure 5b.
 
 ```{r}
 for (s_ in c(15, 50, 90)) {
@@ -57,11 +73,10 @@ for (s_ in c(15, 50, 90)) {
       filter(s == s_, k %in% expand_k(k_)) %>%
       mutate(model = factor(model, levels = c("cnn", "vae", "rcf")))
     if (nrow(cur_data) > 0) { # check in case current model / data subset is not yet run
-      coordinates %>%
-        plot_overlay_combined(means %>% filter(s == s_, k %in% expand_k(k_))) +
+      plot_overlay_combined(cur_data) +
         labs(x = "Dimension 1", y = "Dimension 2") +
         facet_wrap(model ~ bootstrap, scale = "free", ncol = 3)
-      ggsave(str_c(params$derived_dir, "/", s_, "_", k_, "_", "coordinates.png"), dpi = 600, height = 6, width = 4)
+      ggsave(str_c(params$figure_dir, "/", s_, "_", k_, "_", "coordinates.png"), dpi = 600, height = 6, width = 4)
     }
   }
 }
@@ -71,11 +86,10 @@ for (m in c("vae", "cnn", "rcf")) {
     cur_data <- coordinates %>%
       filter(bootstrap == bt, model == m)
     if (nrow(cur_data) > 0) { # check in case current model / data subset is not yet run
-      cur_data %>%
-        plot_overlay_combined(means %>% filter(bootstrap == bt, model == m)) +
+      plot_overlay_combined(cur_data) +
         labs(x = "Dimension 1", y = "Dimension 2") +
         facet_wrap(k ~ s, ncol = 3, scale = "free")
-      ggsave(str_c(params$derived_dir, "/", m, "_", bt, "_", "coordinates.png"), dpi = 600, height = 6, width = 4)
+      ggsave(str_c(params$figure_dir, "/", m, "_", bt, "_", "coordinates.png"), dpi = 600, height = 6, width = 4)
     }
   }
 }

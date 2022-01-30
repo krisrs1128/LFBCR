@@ -1,23 +1,41 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "Compare Bootstraps on the Spatial Process Simulation"
+output: html_document
 params:
-  raw_dir: "../../data/raw_data/spatial_process_models/"
-  derived_dir: "../../data/derived_data/spatial_process_models/"
-  subset: "vae-k64-90"
   B: 100
-  transform: "none"
   K: 2
+  derived_dir: "../../data/derived_data/spatial_process_models/"
+  raw_dir: "../../data/raw_data/spatial_process_models/"
+  subset: "vae-k64-90"
+  transform: "none"
 ---
+
+This notebook outputs the bootstrap projections for a single model type whose
+features were previously learned and extracted from the spatial point process
+simulation.
+
+The model type is specified by the `subset` parameter -- we assume that
+the `raw_dir` folder contains files of the form `{name of subset}-{bootstrap
+number}*.tar.gz` Previously trained models with this format can be downloaded by
+following the `README.md` file in the `data/raw_data/` folder. It is necessary
+to run this script with different `subset` parameters in order to generate the
+faceted displays like in Figure 5. Each run of this notebook gives exactly one
+panel from those displays. An example of the loop that was used is given at the
+bottom of this script.
+
+Aside from the source of the learned features, there is no difference between
+this analysis script and the one in `analysis/data_analysis/`. This is because
+they both apply each type of bootstrap to output a `csv` file of aligned
+projections that will appear in the `params$derived_data` folder.
 
 ```{r, echo = FALSE}
 library(knitr)
 opts_chunk$set(warning = FALSE, message = FALSE)
 ```
 
-This script takes learned features from one training run and generates a
-visualization of feature stability using a parametric bootstrap model (give the
-formulation). The inputs are,
+The block below loads the necessary libraries. `reticulate` is needed because
+feature learners were trained in python, and the extracted features are saved as
+numpy arrays.
 
 ```{r}
 set.seed(1234)
@@ -28,19 +46,34 @@ np <- import("numpy")
 theme_set(min_theme())
 ```
 
+The block below unzips a folder containing features from each bootstrap
+replicate matching the `subset` parameter. We also create a subfolder of
+`derived_data/` for the current model of interest.
+
 ```{r}
 model_paths <- list.files(params$raw_dir, str_c(params$subset, "*"), full = TRUE)
 derived_dir <- file.path(params$derived_dir, params$subset)
 dir.create(derived_dir, recursive = TRUE)
 untar_all(model_paths, derived_dir)
 ```
+Next we read in the learned features and metadata describing which split each
+sample belongs to. Each element of the list `Zb` is a learned feature embedding
+different bootstrap replicate (before doing any dimensionality reduction). The
+`*best.npy` argument specifies which of the extracted features to use -- we save
+features from across many epochs of training, and `*best.npy` refers to the set
+of features at the epoch for which the feature learning model had the lowest
+validation loss.
 
 ```{r}
 Zb <- read_learned_features(derived_dir, "*best.npy", params$transform)
 ix <- read_split_indices(file.path(params$derived_dir, params$subset))
 ```
 
-The nonparametric approach.
+The block below performs the nonparametric bootstrap approach from Section 2.1.
+`Zb_` are the dimensionality reduced features, and `ud_hats` are those features
+after alignment. We join with `ix` so that we can shade points in by the
+associated `y` value. Then, we save the aligned projections with metadata as a
+csv in the `derived_data` folder.
 
 ```{r}
 Zb_ <- Zb %>%
@@ -58,7 +91,11 @@ ud_hats <- align_to_list(Zb_) %>%
 write_csv(ud_hats, str_c(params$derived_dir, "/", params$subset, "_nonparametric.csv"))
 ```
 
-The parametric approach.
+The block below performs the parametric approach. Here we pretend that we had
+only fit one feature extraction model by subsetting to only the first element of
+the list `Zb`. We then generate `params$B` parametric bootstrap samples using
+repeated calls to `boot_fun`. The last few alignment and joining steps are
+identical as in the block above.
 
 ```{r}
 Zb_ <- Zb[[1]][ix$split %in% c("test", "dev"), ]
@@ -72,7 +109,9 @@ ud_hats <- rerun(params$B, boot_fun()$ub) %>%
 write_csv(ud_hats, str_c(params$derived_dir, "/", params$subset, "_parametric.csv"))
 ```
 
-The compromise approach.
+The compromise approach of Section 2.3 is computed below. The `param_boot_cmp`
+function generates parametric bootstrap samples based on the multiple learned
+features in `Zb`.
 
 ```{r}
 Zb_ <- Zb %>%
@@ -87,4 +126,23 @@ ud_hats <- rerun(params$B, boot_fun()$ub) %>%
 write_csv(ud_hats, str_c(params$derived_dir, "/", params$subset, "_compromise.csv"))
 ```
 
-To visualize these outputs, go to...
+To run this notebook across all spatial process relevant settings, you can use
+the following in the shell in the folder containing this `.Rmd` file. The first
+two `Rscript`'s run across the CNN and VAE features, and the last is for the
+RCF.
+
+```{sh, eval = FALSE}
+for s in 15 5 95; do
+  for k in 32 64 128; do
+    Rscript -e "rmarkdown::render('bootstrap.Rmd', params = list(subset='cnn-k${k}-${s}', transform='log'))"
+    Rscript -e "rmarkdown::render('bootstrap.Rmd', params = list(subset='vae-k${k}-${s}')"
+  done;
+
+  for k in 256 512 1024; do
+    Rscript -e "rmarkdown::render('bootstrap.Rmd', params = list(subset='rcf-k${k}-${s}')"
+  done;
+done;
+```
+
+To visualize the outputs, you can use the `bootstrap-vis.Rmd` notebook in this
+folder.

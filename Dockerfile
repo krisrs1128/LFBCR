@@ -11,7 +11,7 @@ RUN apt-get update
 RUN apt install -y software-properties-common
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get update
-RUN apt install -y libgdal-dev
+RUN apt install -y libgdal-dev libudunits2-dev
 RUN apt-get install -y python3.8 python3-pip
 RUN pip3 install numpy jupyterlab
 RUN pip3 install torch==1.8.2+cu111 torchvision==0.9.2+cu111 -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html

@@ -97,12 +97,11 @@ align_with_truth <- function(ud_hats, U, Sigma, tol = 0.01) {
 #' @importFrom ggplot2 ggplot aes geom_hline geom_vline stat_ellipse geom_point
 #'   scale_color_gradient2 scale_fill_gradient2 theme element_text
 #' @export
-plot_overlay_combined <- function(configuration, means) {
+plot_overlay_combined <- function(configuration) {
   ggplot(configuration, aes(X1, X2, col = y, fill = y)) +
       geom_hline(yintercept = 0, col = "#d3d3d3", size = 0.5) +
       geom_vline(xintercept = 0, col = "#d3d3d3", size = 0.5) +
       stat_ellipse(aes(group = i), geom = "polygon", level = 0.95, type = "norm", alpha = 0.5, size = 0.1) +
-      geom_point(data = means, size = 0.2) +
       scale_color_gradient2(low = "#A6036D", high = "#03178C", mid = "#F7F7F7") +
       scale_fill_gradient2(low = "#A6036D", high = "#03178C", mid = "#F7F7F7") +
       theme(
