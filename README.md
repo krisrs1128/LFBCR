@@ -22,8 +22,8 @@ Please cite this compendium as:
 
 The **analysis** directory contains:
 
--   [:file\_folder: data](/analysis/data): Scripts for downloading data
-    used in this analysis.
+-   [:file\_folder: data](/analysis/data): Instructions for downloading
+    data used in this analysis.
 -   [:file\_folder: figures](/analysis/figures): Plots and other
     illustrations.
 -   [:file\_folder: simulations](/analysis/simulations): Notebooks for
