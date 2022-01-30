@@ -1,18 +1,31 @@
 ---
-title: "Data Generation Mechanism"
-output: html_notebook
+title: "Generate Simulation Images"
+output: html_document
+params:
+  output_dir: "../../data/raw_data/"
 ---
 
+This notebook simulates images according to the log Cox Matern Process discussed
+in Section 3.2 and plotted in Figure 3. Note that these data are already
+available in the `stability_data_sim.tar.gz` archive within `raw_data.tar.gz`
+linked in Supplementary Section A. However, if the goal was to regenerate those
+input data archives, this script could be used.
+
+Generating each image takes a few seconds, and we need many training images, so
+we've parallized generation across cores. This is why we're loaded the
+`doParallel`, `foreach` and `parallel` packages.
+
 ```{r}
-library("dplyr")
-library("ggplot2")
-library("inference")
-library("readr")
-theme_set(theme_bw() + theme(panel.grid=element_blank()))
+library(MSLF)
+library(doParallel)
+library(foreach)
+library(parallel)
+library(reticulate)
+library(tidyverse)
+np <- reticulate::import("numpy")
 ```
 
-Let's think about how we want to link the parameters of image generation to
-something like a survival time. This is a specification of all the parameters.
+This is a specification of all the parameters given in Table 1.
 
 ```{r}
 x <- expand.grid(seq(0.1, 1, 0.05), seq(0.1, 1, 0.05))
@@ -26,6 +39,8 @@ tau <- 1.5 # temperature for the marking (0 -> uniform, inf -> hard assignment)
 lambdas <- c(20, 50, 100) # rate parameters in gamma controlling size
 ```
 
+The block below shows an example image.
+
 ```{r, fig.width = 7, fig.height = 3}
 set.seed(10)
 result <- sim_wrapper(x, n_original, nu, alpha, beta_r, nu_r, alpha_r, tau, lambdas)
@@ -34,25 +49,19 @@ plot_matern(result)
 
 # Simulating Images
 
-We've sanity checked what all the images look like, when we vary the simulation
-parameters. Let's have a way of relating these parameters to an ``outcome''
-associated with each image "look." We'll make these assumptions,
+Next we relate the parameters underlyign each image to the outcome $y$
+associated with each image. We made the following assumptions,
 
 * More mixing between cell types is associated with better outcomes
 * Less uniform distribution in cell densities is associated with worse outcomes.
 * More of the first cell type is better for outcomes, more of the other two is bad.
 * larger of the first cell type is better for outcomes
 
-In particular, we'll make up this equation, for some hypothetical outcome y,
-
- y =  (beta_r[1] - beta_r[2] - beta_r[3]) / 3 + (nu_r + alpha_r + nu + alpha) / 4 - tau + (lambdas[1] - 50) / 100 + noise
-
 so that the signs are in the intuitive direction and so that no one group of
-terms dominates. We'll consider modulating the noise level to gauge the
-sensitivity of different approaches.
+terms dominates.
 
-We'll generate the parameters according to a few different distributions (though
-they won't be too wild), depending on whether they are allowed to be negative.
+We generate the parameters according to a few different distributions, depending
+on whether they are allowed to be negative.
 
 ```{r}
 n_images <- 1e4
@@ -74,6 +83,9 @@ y <- X %*% c(.5, 1, -1, -1, -.5, -.5, -.5, -.5, .5, 1) / sqrt(ncol(X))
 y <- y - mean(y)
 ```
 
+This block plots two examples each for three very different $y$ ranges. Each
+component in `plot_list` is one of the panels appearing in Figure 3.
+
 ```{r, eval = FALSE}
 plot_ix <- order(y)[c(1:2, c(4998, 5004), c(9998, 10000))]
 plot_list <- list()
@@ -87,9 +99,11 @@ for (i in seq_along(plot_ix)) {
 }
 ```
 
+This combines all the figures in `plot_list` and `raster_list` above to create
+Figure 3.
 
 ```{r, eval = FALSE, fig.height = 5, fig.width = 10}
-library("gridExtra")
+library(gridExtra)
 grid.arrange(
   plot_list[[1]], raster_list[[1]],
   plot_list[[2]], raster_list[[2]],
@@ -102,21 +116,19 @@ grid.arrange(
 )
 ```
 
-
-Let's create the directory within which to save our results.
+We are almost ready to simulate all the images. The block below saves the
+directory to which all the simulated outputs will be saved.
 
 ```{r}
-tiles_dir <- file.path("tiles")
+tiles_dir <- file.path(params$output_dir, "tiles")
 dir.create(tiles_dir)
 ```
 
-Now we can simulate all the images.
+Finally, we generate the images. The `Xy.csv` file saved at the very end saves
+all the raw parameter and response values associated with each generated image.
 
 ```{r}
 # can convert foreach into a standard for loop if no parallel backend
-library("parallel")
-library("doParallel")
-library("foreach")
 cl <- makeCluster(12)
 registerDoParallel(cl)
 
@@ -131,11 +143,10 @@ paths <- foreach(j = seq_len(n_images), .combine = c, .packages = pkgs) %dopar% 
   # convert to raster and save as numpy
   path <- sprintf(file.path(tiles_dir, "image-%s.npy"), str_pad(j, 4, "left", 0))
   r <- make_raster(marks, 3)
-  np <- reticulate::import("numpy")
   np$save(path, as.array(r))
   return(path)
 }
 stopCluster(cl)
 
-write_csv(data.frame(path = paths, X = X, y = y), file.path("Xy.csv"))
+write_csv(data.frame(path = paths, X = X, y = y), file.path(params$output_dir, "Xy.csv"))
 ```

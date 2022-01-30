@@ -42,6 +42,11 @@ RUN Rscript -e "BiocManager::install('SingleCellExperiment')"
 RUN Rscript -e "install.packages('pdist', repos='http://cran.us.r-project.org')"
 RUN Rscript -e "install.packages('stars', repos='http://cran.us.r-project.org')"
 RUN Rscript -e "install.packages('reticulate', repos='http://cran.us.r-project.org')"
+RUN Rscript -e "install.packages('sf', repos='http://cran.us.r-project.org')"
+RUN Rscript -e "install.packages('RStoolbox', repos='http://cran.us.r-project.org')"
+RUN Rscript -e "install.packages('parallel', repos='http://cran.us.r-project.org')"
+RUN Rscript -e "install.packages('doParallel', repos='http://cran.us.r-project.org')"
+RUN Rscript -e "install.packages('forEach', repos='http://cran.us.r-project.org')"
 
 # go into the repo directory
 RUN . /etc/environment \
