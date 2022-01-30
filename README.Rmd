@@ -36,9 +36,9 @@ The **analysis** directory contains:
   this analysis.
   - [:file\_folder: figures](/analysis/figures): Plots and other
     illustrations.
-  - [:file\_folder: simulations](/analysis/simulations): Scripts for running the
+  - [:file\_folder: simulations](/analysis/simulations): Notebooks for running the
   low-rank and spatial point process simulations.
-  - [:file\_folder: data_analysis](/analysis/data_analysis): Scripts for running
+  - [:file\_folder: data_analysis](/analysis/data_analysis): Notebooks for running
   the spatial proteomics application.
 
 ## How to run in your browser or download and run locally

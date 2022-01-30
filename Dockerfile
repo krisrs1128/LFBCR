@@ -6,9 +6,6 @@ MAINTAINER Kris Sankaran <ksankaran@wisc.edu>
 
 COPY . /MSLF
 
-RUN Rscript -e "install.packages('BiocManager', repos='http://cran.us.r-project.org')"
-RUN Rscript -e "install.packages('devtools', repos='http://cran.us.r-project.org')"
-
 # installing python
 RUN apt-get update
 RUN apt install -y software-properties-common
@@ -33,26 +30,19 @@ RUN pip3 install six==1.15.0
 RUN pip3 install tensorboard==2.4.0
 RUN pip3 install zipp==3.1.0
 
+RUN Rscript -e "install.packages('raster', repos='http://cran.us.r-project.org')"
 RUN Rscript -e "install.packages('tidyverse', repos='https://cran.us.r-project.org')"
 RUN Rscript -e "install.packages('expm', repos='https://cran.us.r-project.org')"
 RUN Rscript -e "install.packages('irlba', repos='https://cran.us.r-project.org')"
 RUN Rscript -e "install.packages('devtools', repos='https://cran.us.r-project.org')"
 RUN Rscript -e "install.packages('BiocManager', repos='https://cran.us.r-project.org')"
-
-# installing R
 RUN Rscript -e "BiocManager::install('SingleCellExperiment')"
 RUN Rscript -e "install.packages('pdist', repos='http://cran.us.r-project.org')"
 RUN Rscript -e "install.packages('stars', repos='http://cran.us.r-project.org')"
 RUN Rscript -e "install.packages('reticulate', repos='http://cran.us.r-project.org')"
-RUN Rscript -e "install.packages('raster', repos='http://cran.us.r-project.org')"
 
 # go into the repo directory
 RUN . /etc/environment \
-  # Install linux depedendencies here
-  # e.g. need this for ggforce::geom_sina
   && sudo apt-get update \
   && sudo apt-get install libudunits2-dev -y \
-  # build this compendium package
   && R -e "devtools::install('/MSLF', dep=TRUE)" \
-  # render the manuscript into a docx, you'll need to edit this if you've
-  # customised the location and name of your main Rmd file
