@@ -41,7 +41,7 @@ numpy arrays.
 ```{r}
 set.seed(1234)
 library(tidyverse)
-library(MSLF)
+library(LFBCR)
 library(reticulate)
 np <- import("numpy")
 theme_set(min_theme())
@@ -136,11 +136,11 @@ following in the shell in the folder containing this `.Rmd` file. The first two
 ```{sh, eval = FALSE}
 for k in 32 64 128; do
   Rscript -e "rmarkdown::render('bootstrap.Rmd', params = list(subset='tnbc_cnn-k${k}', transform='log'))"
-  Rscript -e "rmarkdown::render('bootstrap.Rmd', params = list(subset='tnbc_vae-k${k}')"
+  Rscript -e "rmarkdown::render('bootstrap.Rmd', params = list(subset='tnbc_vae-k${k}'))"
 done;
 
 for k in 256 512 1024; do
-  Rscript -e "rmarkdown::render('bootstrap.Rmd', params = list(subset='tnbc_rcf-k${k}')"
+  Rscript -e "rmarkdown::render('bootstrap.Rmd', params = list(subset='tnbc_rcf-k${k}'))"
 done;
 ```
 

@@ -1,5 +1,5 @@
 ---
-title: "R Notebook"
+title: "Preprocess Raw Spatial Proteomic Data"
 output: html_notebook
 params:
   qsize: 256
@@ -9,10 +9,13 @@ params:
   j: 1
 ---
 
+This script has not yet been adapted to the `LFBCR` Compendium repository!
+Please contact the author <ksankaran@wisc.edu> if you are trying to preprocess
+the data on your own.
+
 ```{r}
-library("dplyr")
-library("stringr")
-library("inference")
+library(tidyverse)
+library(LFBCR)
 ```
 
 ```{r}

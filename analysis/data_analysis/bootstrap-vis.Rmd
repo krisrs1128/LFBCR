@@ -19,7 +19,7 @@ model with $K = 128$ for the CNN or VAE corresponds to a model of size $K =
 1024$ in the RCF.
 
 ```{r}
-library(MSLF)
+library(LFBCR)
 library(tidyverse)
 theme_set(min_theme())
 

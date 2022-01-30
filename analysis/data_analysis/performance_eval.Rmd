@@ -1,5 +1,5 @@
 ---
-title: "R Notebook"
+title: "Visualize Performance vs. Ridge Regression Baseline"
 output: html_notebook
 params:
   input_dir: "data/data_analysis_outputs/"
@@ -8,15 +8,10 @@ params:
 
 ```{r}
 set.seed(1234)
-library(dplyr)
 library(glmnet)
-library(ggplot2)
-library(lfboot)
-library(purrr)
-library(readr)
+library(LFBCR)
+library(tidyverse)
 library(reticulate)
-library(stringr)
-source("visualization_functions.R")
 np <- import("numpy")
 theme_set(min_theme())
 ```
