@@ -4,7 +4,7 @@
 \alias{untar_all}
 \title{Untar Outputs for Visualization}
 \usage{
-untar_all(paths, data_dir = ".")
+untar_all(paths, exdir = "archive")
 }
 \description{
 Untar Outputs for Visualization
