@@ -1,0 +1,16 @@
+organization: # all relative to $DATA_DIR
+  features_dir: "features/"
+  metadata: "layers.csv"
+  model: "widenet.pt"
+  splits: "splits_0.15-train.csv"
+  xy: "Xy.csv"
+train:
+  model: "rcf"
+  batch_size: 128
+  n_patches: 512
+  save_subset: 2000
+  alpha: 0.1 # elastic net regularization parameter
+  l1_ratio: 0.1 # mixing parameter l1 vs l2
+bootstrap:
+  path: "bootstraps_0.15-train.csv"
+  B: 100
