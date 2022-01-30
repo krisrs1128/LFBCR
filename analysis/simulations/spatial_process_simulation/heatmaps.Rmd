@@ -1,7 +1,7 @@
 ---
 title: Heatmap of Raw Features
 params:
-  run: "../../data/raw_data/spatial_process_models/vae-k128-50.yaml_0.tar.gz"
+  run: "../../data/raw_data/spatial_process_models/vae-k64-50.yaml_0.tar.gz"
   out_dir: "../../figures/heatmaps/"
 ---
 
@@ -24,7 +24,7 @@ H_ <- np$load(list.files(fdir, "*best.npy", full = TRUE)) %>%
   as.data.frame()
 ```
 
-```{r, out.width = 900, out.height = 400}
+```{r}
 cur_paths <- subset %>%
   mutate(ix = row_number()) %>%
   select(ix, path)
@@ -40,7 +40,10 @@ if (str_detect(params$run, "rcf")) {
   H_ <- H_ + matrix(runif(prod(dim(H_)), -0.1, 0.1), nrow(H_), ncol(H_))
 }
 
-png(file.path(out_dir, str_remove(basename(params$run))))
+png(
+  file.path(params$out_dir, str_c(str_remove(basename(params$run), ".tar.gz"), ".png")),
+  width = 900, height = 400
+)
 superheat(
   t(cor(H_, H[, -1])),
   pretty.order.rows = FALSE,
