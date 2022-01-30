@@ -4,7 +4,7 @@ FROM rocker/verse:4.1.0
 # required
 MAINTAINER Kris Sankaran <ksankaran@wisc.edu>
 
-COPY . /MSLF
+COPY . /LFBCR
 
 # installing python
 RUN apt-get update
