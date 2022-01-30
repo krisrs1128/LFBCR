@@ -1,12 +1,16 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "Low-Rank Simulation"
+output: html_document
 params:
   B: 1000 # number of bootstraps
   N: 1000 # number of samples
   D: 100 # dimensionality
   K: 2 # latent dimensionality
 ---
+
+This script generates the figures appearing in Section 3.1, comparing the three
+bootstrap approaches on a permuted low-rank model. First, we load necessary
+libraries.
 
 ```{r}
 set.seed(1234)
@@ -18,6 +22,13 @@ theme_set(min_theme())
 attach(params)
 ```
 
+The block below simulates one realization from the mechanism in equations 4 - 7.
+$X$ is a random low rank matrix observed with noise, and $y$ is a linear
+combination of the latent coordinates from each row of $X$. In a more realistic
+application, each row of $X$ would be an image, text, or audio sample, for
+example, and we would use a feature extractor to convert it into a matrix. In
+this simplified setup, though, we simple assume $X$ is a matrix.
+
 ```{r}
 U <- r_ortho(N, D)
 V <- r_ortho(D, D)
@@ -27,20 +38,30 @@ beta <- c(c(1, -1), rep(0, D - K))
 y <- U %*% diag(sqrt(Sigma)) %*% beta + rnorm(N, 0, .1)
 ```
 
-Here is the strategy that extracts the features once and then applies a
-parametric bootstrap according to the assumed model.
+Here is the strategy that extracts the features once and then applies the
+parametric bootstrap of Section 2.2. The function $f$ simulates the feature
+extraction step in equation 8 -- each call fo `boot_fun()` samples the truncated
+SVD coordinates with noise and randomly permutes the columns. The
+`align_to_list` function applies a Procrustes rotation to the
+dimensionality-reduced learned features, and `align_with_truth` applies a second
+rotation to align coordinates with the known coordinates from the previous
+block. This last step is just so that we can overlay the truth on the estimated
+coordinates, it would not be possible in a real application.
 
 ```{r}
 f <- features(X)
 boot_fun <- param_boot(f(X), K)
-ud_hats <- rerun(B, boot_fun()$ub) %>%
-  align_to_list(df = F)
 ud_combined <- list()
-ud_combined[["parametric"]] <- align_with_truth(ud_hats, U, Sigma) %>%
+ud_combined[["parametric"]] <- rerun(B, boot_fun()$ub) %>%
+  align_to_list() %>%
+  align_with_truth(U, Sigma) %>%
   left_join(data.frame(i = seq_along(y), y = y))
 ```
 
-What if we instead extract $B$ sets of features?
+The block below instead applies the nonparametric bootstrap of Section 2.1. It
+computes $B$ feature extractors by calling `f` within the `rerun` loop (contrast
+with th eblock above, which ran `f` once). The Procrustes analysis steps are the
+same as above.
 
 ```{r}
 f <- features(X)
@@ -49,29 +70,34 @@ Zb <- rerun(B, {
   svf <- irlba(full_features, nv=K) 
   svf$u %*% diag(svf$d)
 })
-ud_hats <- align_to_list(Zb)
-ud_combined[["nonparametric"]] <- align_with_truth(ud_hats, U, Sigma) %>%
+ud_combined[["nonparametric"]] <- align_to_list(Zb)  %>%
+  align_with_truth(U, Sigma) %>%
   left_join(data.frame(i = seq_along(y), y = y))
 ```
 
-Here is a kind of compromise between repeated feature learning and a parametric
-bootstrap. The simulated samples are somewhat complicated (projected mixtures,
-it seems like). But it is computationally simpler and does seem more honest than
-not using any feature relearning.
+The step below gives the compromise bootstrap of Section 2.3. It offers a of
+compromise between repeated feature learning in the nonparametric bootstrap and
+the single run from the parametric bootstrap. The code is also a mix of the two
+approaches -- the first `rerun` step trains 100 feature extractors (not 1000
+like before) and the second increases the total number of bootstraps to 1000 by
+simulating from the parametric model.
 
 ```{r}
 f <- features(X)
 Zb <- rerun(100, f(X))
 boot_fun <- param_boot_cmp(Zb)
-ud_hats <- rerun(B, boot_fun()$ub) %>%
-  align_to_list()
-ud_combined[["compromise"]] <- align_with_truth(ud_hats, U, Sigma) %>%
+ud_combined[["compromise"]] <- rerun(B, boot_fun()$ub) %>%
+  align_to_list() %>%
+  align_with_truth(U, Sigma) %>%
   left_join(data.frame(i = seq_along(y), y = y)) # adds a new list element with the aligned truth
 ```
-```{r}
-contained <- coverage(ud_combined[[3]] %>% filter(b < max(b)),  ud_combined[[3]] %>% filter(b == max(b)))
-mean(contained)
-```
+
+Finally, we can compute the coverage of the confidence areas from each approach.
+We are using `b == max(b)` to extract the true coordinates, since in the
+`ud_combined` objects, the last element of each list is the aligned truth. It
+seems that the compromise approach is conservative, the parametric approach is
+potentially conservative, and the nonparametric approach is nearly exactly the
+expected coverage.
 
 ```{r}
 map(ud_combined, ~ {
@@ -80,8 +106,12 @@ map(ud_combined, ~ {
 })
 ```
 
+The block below generates Figure 2. The `plot_overlay_truth` function is in
+`R/vis.R` in this compendium. We are showing only the first 100 samples, since
+showing all 1000 clusters the display.
+
 ```{r, width=6, height=1.6}
 bind_rows(ud_combined, .id = "bootstrap") %>% 
   mutate(bootstrap = factor(bootstrap, levels = c("parametric", "nonparametric", "compromise"))) %>%
-   plot_overlay_truth(100)
+  plot_overlay_truth(100)
 ```

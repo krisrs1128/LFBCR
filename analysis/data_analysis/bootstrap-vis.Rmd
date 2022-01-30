@@ -1,11 +1,13 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "Visualize Projection Uncertainty for the Proteomic Dataset"
+output: html_document
 params:
   derived_dir: "../data/derived_data/tnbc_models"
   raw_dir: "../data/raw_data/stability_data/" # unzipped stability_data_tnbc.tar.gz
   figure_dir: "../figures/"
 ---
+
+This notebook reproduces
 
 ```{r}
 library(MSLF)
