@@ -24,7 +24,6 @@ param_boot <- function(Z, K = 2) {
   }
 }
 
-#' Zb here is like the Lb used in the writeup
 #' @export
 param_boot_ <- function(u_hat, d_hat, E) {
   eB <- matrix(sample(E, nrow(E) * length(d_hat), replace = TRUE), nrow(E), length(d_hat))
@@ -33,7 +32,6 @@ param_boot_ <- function(u_hat, d_hat, E) {
   list(Zb = Zb, ub = svd(Zb)$u %*% diag(svd(Zb)$d))
 }
 
-#' Zb here is like the Lb used in the writeup
 #' @importFrom irlba irlba
 #' @importFrom purrr map map2
 #' @export
@@ -72,7 +70,7 @@ arr_to_list <- function(x, df = F) {
 }
 
 #' @export
-procrustes <- function(x_list, tol = 0.001, max_iter=100) {
+procrustes <- function(x_list, tol = 1e-5, max_iter=250) {
   x_align <- array(dim = c(dim(x_list[[1]]), length(x_list)))
   M <- x_list[[1]]
 

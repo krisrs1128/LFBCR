@@ -1,5 +1,6 @@
 
 #' Untar Outputs for Visualization
+#' @export
 untar_all <- function(paths, exdir = "archive") {
   for (i in seq_along(paths)) {
     exdir_i <- file.path(exdir, i)

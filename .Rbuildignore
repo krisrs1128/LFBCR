@@ -3,7 +3,8 @@
 ^README-.*\.png$
 ^CONDUCT\.md$
 ^CONTRIBUTING\.md$
-analysis
+^analysis
 ^Dockerfile$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^.*\.†ar.gz

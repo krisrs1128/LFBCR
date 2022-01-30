@@ -1,16 +1,12 @@
-Package: MSLF
-Title: Package accompanying "Measuring the Stability of Learned Features"
+Package: LFBCR
+Title: Package accompanying "Bootstrap Confidence Regions for Learned Feature Embeddings"
 Version: 0.1
 Authors@R:
     person(given = "Kris",
            family = "sankaran",
            role = c("aut", "cre"),
            email = "ksankaran@wisc.edu")
-Description: This package includes code for reproducing all analysis in the preprint "Measuring the Stability of Learned Features."
-  Specifically, it includes Rmarkdown scripts for performing bootstrap analysis of learned feature embeddings, an R package with the
-  more generic functions used in that analysis, and python code for training feature extractors. The data are not included in the 
-  package due to size constraints, but a link for downloading both the raw data and the intermediate feature extractions is given in 
-  the README.md of the data folder.
+Description: This package includes code for reproducing all analysis in the preprint "Bootstrap Confidence Regions for Learned Feature Embeddings." Specifically, it includes Rmarkdown scripts for performing bootstrap analysis of learned feature embeddings, an R package with the more generic functions used in that analysis, and python code for training feature extractors. The data are not included in the package due to size constraints, but a link for downloading both the raw data and the intermediate feature extractions is given in the README.md of the data folder.
 License: CC BY 4.0
 ByteCompile: true
 Encoding: UTF-8
