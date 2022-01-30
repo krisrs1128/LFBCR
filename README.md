@@ -1,22 +1,23 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# MSLF
+# LFBCR
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/krisrs1128/MSLF/main?urlpath=rstudio)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/krisrs1128/LFBCR/main?urlpath=rstudio)
 
 This repository contains the data and code for the preprint online here:
 
-> Sankaran, Kris, (2022). *Measuring the Stability of Learned Features*.
-> Accessed 29 Jan 2022. Online at <https://arxiv.org/abs/2102.10388>
+> Sankaran, Kris, (2022). *Bootstrap Confidence Regions for Learned
+> Feature Embeddings*. Accessed 30 Jan 2022. Online at
+> <https://arxiv.org/abs/2102.10388>
 
 ### How to cite
 
 Please cite this compendium as:
 
-> Authors, (2022). *Compendium of R code and data for Measuring the
-> Stability of Learned Features*. Accessed 29 Jan 2022. Online at
-> <https://github.com/krisrs1128/MSLF>
+> Authors, (2022). *Compendium of R code and data for Bootstrap
+> Confidence Regions for Learned Feature Embeddings*. Accessed 30 Jan
+> 2022. Online at <https://github.com/krisrs1128/LFBCR>
 
 ## Contents
 

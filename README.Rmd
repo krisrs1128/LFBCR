@@ -11,12 +11,12 @@ knitr::opts_chunk$set(
   fig.path = "README-"
 )
 # Please put your title here to include it in the file below.
-Title <- "Measuring the Stability of Learned Features"
+Title <- "Bootstrap Confidence Regions for Learned Feature Embeddings"
 ```
 
-# MSLF
+# LFBCR
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/krisrs1128/MSLF/main?urlpath=rstudio)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/krisrs1128/LFBCR/main?urlpath=rstudio)
 
 This repository contains the data and code for the preprint online here:
 
@@ -26,7 +26,7 @@ This repository contains the data and code for the preprint online here:
 
 Please cite this compendium as:
 
-> Authors, (`r format(Sys.Date(), "%Y")`). _Compendium of R code and data for `r Title`_. Accessed `r format(Sys.Date(), "%d %b %Y")`. Online at <https://github.com/krisrs1128/MSLF>
+> Authors, (`r format(Sys.Date(), "%Y")`). _Compendium of R code and data for `r Title`_. Accessed `r format(Sys.Date(), "%d %b %Y")`. Online at <https://github.com/krisrs1128/LFBCR>
 
 ## Contents
 
