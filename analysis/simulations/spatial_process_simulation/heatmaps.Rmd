@@ -1,7 +1,7 @@
 ---
 title: Heatmap of Raw Features
 params:
-  run: "../../data/raw_data/spatial_process_models/vae-k64-50.yaml_0.tar.gz"
+  run: "../../data/raw_data/spatial_process_models/rcf-k512-50.yaml_1.tar.gz"
   out_dir: "../../figures/heatmaps/"
 ---
 
@@ -15,12 +15,13 @@ np <- import("numpy")
 ```{r}
 dir.create(params$out_dir)
 fdir <- file.path(params$out_dir, "features")
+unlink(fdir, force = TRUE, recursive = TRUE)
 
 untar(params$run, exdir = params$out_dir)
 subset <- read_csv(list.files(fdir, "subset*", full = TRUE))
 Xy <- read_csv(list.files(params$out_dir, "Xy*", full = TRUE)) %>%
   left_join(subset)
-H_ <- np$load(list.files(fdir, "*best.npy", full = TRUE)) %>%
+H_ <- np$load(list.files(fdir, "*best.npy", full = TRUE)[1]) %>%
   as.data.frame()
 ```
 
