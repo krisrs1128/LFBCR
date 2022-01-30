@@ -4,3 +4,7 @@ analysis/data/*.tar.gz
 .Rhistory
 .RData
 .Ruserdata
+*cache*
+*.html
+*DS_Store
+*ipynb_checkpoi*
