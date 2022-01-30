@@ -1,0 +1,21 @@
+organization: # all relative to $DATA_DIR
+  features_dir: "features/"
+  model: "model_best.pt"
+  xy: "Xy.csv"
+  splits: "Xy.csv"
+  metadata: "layers.csv"
+train:
+  batch_size: 64
+  checkpoint: null
+  factor: 0.5
+  lr: 0.00005
+  model: "vae"
+  n_epochs: 100
+  p_in: 7
+  patience: 20
+  save_every: 50
+  save_subset: 2000
+  z_dim: 64
+bootstrap:
+  path: "bootstraps_0.5-train.csv"
+  B: 100
