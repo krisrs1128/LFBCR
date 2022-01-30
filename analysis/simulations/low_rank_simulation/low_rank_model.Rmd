@@ -17,7 +17,7 @@ set.seed(1234)
 library(expm)
 library(irlba)
 library(tidyverse)
-library(MSLF)
+library(LFBCR)
 theme_set(min_theme())
 attach(params)
 ```

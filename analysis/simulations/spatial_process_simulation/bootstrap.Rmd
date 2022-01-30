@@ -6,7 +6,7 @@ params:
   K: 2
   derived_dir: "../../data/derived_data/spatial_process_models/"
   raw_dir: "../../data/raw_data/spatial_process_models/"
-  subset: "vae-k64-90"
+  subset: "rcf-k512-90"
   transform: "none"
 ---
 
@@ -40,10 +40,9 @@ numpy arrays.
 ```{r}
 set.seed(1234)
 library(tidyverse)
-library(MSLF)
+library(LFBCR)
 library(reticulate)
 np <- import("numpy")
-theme_set(min_theme())
 ```
 
 The block below unzips a folder containing features from each bootstrap
@@ -65,7 +64,7 @@ of features at the epoch for which the feature learning model had the lowest
 validation loss.
 
 ```{r}
-prefix <- ifelse(str_detect(params$subset, "rcf"), "linear_best.npy", "*best.npy")
+prefix <- ifelse(str_detect(params$subset, "rcf"), "full_best", "*best.npy")
 Zb <- read_learned_features(derived_dir, prefix, params$transform)
 ix <- read_split_indices(file.path(params$derived_dir, params$subset))
 ```
@@ -133,14 +132,14 @@ two `Rscript`'s run across the CNN and VAE features, and the last is for the
 RCF.
 
 ```{sh, eval = FALSE}
-for s in 15 5 95; do
+for s in 15 50 90; do
   for k in 32 64 128; do
     Rscript -e "rmarkdown::render('bootstrap.Rmd', params = list(subset='cnn-k${k}-${s}', transform='log'))"
-    Rscript -e "rmarkdown::render('bootstrap.Rmd', params = list(subset='vae-k${k}-${s}')"
+    Rscript -e "rmarkdown::render('bootstrap.Rmd', params = list(subset='vae-k${k}-${s}'))"
   done;
 
   for k in 256 512 1024; do
-    Rscript -e "rmarkdown::render('bootstrap.Rmd', params = list(subset='rcf-k${k}-${s}')"
+    Rscript -e "rmarkdown::render('bootstrap.Rmd', params = list(subset='rcf-k${k}-${s}'))"
   done;
 done;
 ```

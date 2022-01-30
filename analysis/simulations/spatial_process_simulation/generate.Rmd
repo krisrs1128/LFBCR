@@ -16,7 +16,7 @@ we've parallized generation across cores. This is why we're loaded the
 `doParallel`, `foreach` and `parallel` packages.
 
 ```{r}
-library(MSLF)
+library(LFBCR)
 library(doParallel)
 library(foreach)
 library(parallel)

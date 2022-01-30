@@ -1,7 +1,7 @@
 ---
 title: Heatmap of Raw Features
 params:
-  run: "../../data/raw_data/spatial_process_models/rcf-k512-50.yaml_1.tar.gz"
+  run: "../../data/raw_data/spatial_process_models/rcf-k512-50.yaml_0.tar.gz"
   out_dir: "../../figures/heatmaps/"
 ---
 
