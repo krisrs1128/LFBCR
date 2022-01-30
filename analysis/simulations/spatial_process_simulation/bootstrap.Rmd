@@ -40,6 +40,7 @@ numpy arrays.
 ```{r}
 set.seed(1234)
 library(tidyverse)
+library(irlba)
 library(LFBCR)
 library(reticulate)
 np <- import("numpy")
@@ -79,8 +80,8 @@ csv in the `derived_data` folder.
 Zb_ <- Zb %>%
   map(~ .[ix$split %in% c("test", "dev"), ]) %>%
   map(~ {
-    svf <- svd(.) 
-    svf$u[, 1:params$K] %*% diag(svf$d[1:params$K])
+    svf <- irlba(., nv=params$K) 
+    svf$u %*% diag(svf$d)
   })
 
 ud_hats <- align_to_list(Zb_) %>%

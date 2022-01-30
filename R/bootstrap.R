@@ -1,4 +1,6 @@
 
+#' Extract Features for Low-Rank Simulation
+#' 
 #' @export
 features <- function(X, K = 50, sigma_e = 0.1) {
   N <- nrow(X)
@@ -11,12 +13,14 @@ features <- function(X, K = 50, sigma_e = 0.1) {
   }
 }
 
+#' Initialize Parametric Bootstrap Sampler
+#' @importFrom irlba irlba
 #' @export
 param_boot <- function(Z, K = 2) {
-  svz <- svd(Z)
-  u_hat <- svz$u[, 1:K]
-  d_hat <- svz$d[1:K]
-  v_hat <- svz$v[, 1:K]
+  svz <- irlba(Z, nv=K)
+  u_hat <- svz$u
+  d_hat <- svz$d
+  v_hat <- svz$v
   E <- Z - u_hat %*% diag(d_hat) %*% t(v_hat)
 
   function() {
@@ -24,6 +28,7 @@ param_boot <- function(Z, K = 2) {
   }
 }
 
+#' Parametric Bootstrap Definition
 #' @export
 param_boot_ <- function(u_hat, d_hat, E) {
   eB <- matrix(sample(E, nrow(E) * length(d_hat), replace = TRUE), nrow(E), length(d_hat))
@@ -32,6 +37,7 @@ param_boot_ <- function(u_hat, d_hat, E) {
   list(Zb = Zb, ub = svd(Zb)$u %*% diag(svd(Zb)$d))
 }
 
+#' Initialize Compromise Bootstrap Sampler
 #' @importFrom irlba irlba
 #' @importFrom purrr map map2
 #' @export
@@ -46,6 +52,8 @@ param_boot_cmp <- function(Zb, K = 2) {
   }
 }
   
+#' Compromise Bootstrap Definition
+#' @importFrom irlba irlba
 #' @export
 param_boot_cmp_ <- function(M, Eb) {
   Estar <- do.call(cbind, Eb)
@@ -53,10 +61,11 @@ param_boot_cmp_ <- function(M, Eb) {
   Estar <- matrix(sample(Estar, nrow(Estar) * K, replace = TRUE), nrow(Estar), K)
   Pi <- random_permutation(K)
   Zb <- (M + Estar) %*% Pi
-  svz <- svd(Zb)
+  svz <- irlba(Zb)
   list(Zb = Zb, ub = svz$u %*% diag(svz$d))
 }
 
+#' Convert a 3D Array to List of Matrices
 #' @importFrom purrr map
 #' @export
 arr_to_list <- function(x, df = F) {
@@ -69,8 +78,9 @@ arr_to_list <- function(x, df = F) {
   res
 }
 
+#' Procrustes Analysis
 #' @export
-procrustes <- function(x_list, tol = 1e-5, max_iter=250) {
+procrustes <- function(x_list, tol = 1e-5, max_iter=1000) {
   x_align <- array(dim = c(dim(x_list[[1]]), length(x_list)))
   M <- x_list[[1]]
 
@@ -95,9 +105,10 @@ procrustes <- function(x_list, tol = 1e-5, max_iter=250) {
   list(x_align = x_align, M = M)
 }
 
+#' Procrustes for a List of Matrices
 #' @importFrom magrittr %>%
 #' @export
-align_to_list <- function(Zb, df = F, tol = 0.01) {
+align_to_list <- function(Zb, df = F, tol = 1e-5) {
   procrustes(Zb, tol = tol) %>%
     .[["x_align"]] %>%
     arr_to_list(df = df)
