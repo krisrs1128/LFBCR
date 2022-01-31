@@ -4,7 +4,7 @@
 \alias{procrustes}
 \title{Procrustes Analysis}
 \usage{
-procrustes(x_list, tol = 1e-05, max_iter = 1000)
+procrustes(x_list, tol = 0.01, max_iter = 100)
 }
 \description{
 Procrustes Analysis

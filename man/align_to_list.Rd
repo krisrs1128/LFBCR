@@ -4,7 +4,7 @@
 \alias{align_to_list}
 \title{Procrustes for a List of Matrices}
 \usage{
-align_to_list(Zb, df = F, tol = 1e-05)
+align_to_list(Zb, df = F, tol = 0.01)
 }
 \description{
 Procrustes for a List of Matrices

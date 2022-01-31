@@ -39,9 +39,9 @@ numpy arrays.
 
 ```{r}
 set.seed(1234)
-library(tidyverse)
-library(irlba)
 library(LFBCR)
+library(irlba)
+library(tidyverse)
 library(reticulate)
 np <- import("numpy")
 ```
