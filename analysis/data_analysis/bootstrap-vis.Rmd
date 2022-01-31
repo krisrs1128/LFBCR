@@ -67,17 +67,15 @@ bootstrap`, like in Figure 8. Then, we filter by model and bootstrap and compare
 across `s ~ k`, like in Figure 9.
 
 ```{r}
-for (s_ in c(15, 50, 90)) {
-  for (k_ in c(32, 64, 128)) {
-    cur_data <- coordinates %>%
-      filter(s == s_, k %in% expand_k(k_)) %>%
-      mutate(model = factor(model, levels = c("tnbc_cnn", "tnbc_vae", "tnbc_rcf")))
-    if (nrow(cur_data) > 0) { # check in case current model / data subset is not yet run
-      plot_overlay_combined(cur_data) +
-        labs(x = "Dimension 1", y = "Dimension 2") +
-        facet_wrap(model ~ bootstrap, scale = "free", ncol = 3)
-      ggsave(str_c(params$figure_dir, "/", s_, "_", k_, "_", "coordinates.png"), dpi = 600, height = 6, width = 4)
-    }
+for (k_ in c(32, 64, 128)) {
+  cur_data <- coordinates %>%
+    filter(k %in% expand_k(k_)) %>%
+    mutate(model = factor(model, levels = c("tnbc_cnn", "tnbc_vae", "tnbc_rcf")))
+  if (nrow(cur_data) > 0) { # check in case current model / data subset is not yet run
+    plot_overlay_combined(cur_data) +
+      labs(x = "Dimension 1", y = "Dimension 2") +
+      facet_wrap(model ~ bootstrap, scale = "free", ncol = 3)
+    ggsave(str_c(params$figure_dir, "/", "tnbc_k_", k_, "_", "coordinates.png"), dpi = 600, height = 6, width = 4)
   }
 }
 
@@ -89,7 +87,7 @@ for (m in c("tnbc_vae", "tnbc_cnn", "tnbc_rcf")) {
       plot_overlay_combined(cur_data) +
         labs(x = "Dimension 1", y = "Dimension 2") +
         facet_wrap(model ~ k, ncol = 3, scale = "free")
-      ggsave(str_c(params$figure_dir, "/", m, "_", bt, "_", "coordinates.png"), dpi = 600, height = 6, width = 4)
+      ggsave(str_c(params$figure_dir, "/", m, "_", bt, "_", "coordinates.png"), dpi = 600, height = 3, width = 6)
     }
   }
 }
@@ -119,7 +117,7 @@ min_dists <- c(0.1, 0.1, 100)
 for (mi in seq_along(models)) {
   cur_data <- coordinates %>%
     filter(bootstrap == "nonparametric", k %in% c(128, 1024), model == models[mi]) %>%
-    group_by(i, bootstrap, model, s, k) %>%
+    group_by(i, bootstrap, model, k) %>%
     summarise(across(starts_with("X"), mean), y = y[1]) %>%
     left_join(coordinates %>% ungroup() %>% select(i, ix) %>% unique())
   if (nrow(cur_data) == 0) next

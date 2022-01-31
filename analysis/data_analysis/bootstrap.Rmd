@@ -68,7 +68,7 @@ of features at the epoch for which the feature learning model had the lowest
 validation loss.
 
 ```{r}
-prefix <- ifelse(str_detect(params$subset, "rcf"), "linear_best.npy", "*best.npy")
+prefix <- ifelse(str_detect(params$subset, "rcf"), "full_best.npy", "*best.npy")
 Zb <- read_learned_features(derived_dir, prefix, params$transform)
 ix <- read_split_indices(file.path(params$derived_dir, params$subset))
 ```
@@ -83,7 +83,7 @@ csv in the `derived_data` folder.
 Zb_ <- Zb %>%
   map(~ .[ix$split %in% c("test", "dev"), ]) %>%
   map(~ {
-    svf <- irlba(., nv=K) 
+    svf <- irlba(., nv=params$K) 
     svf$u %*% diag(svf$d)
   })
 
