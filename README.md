@@ -15,7 +15,7 @@ This repository contains the data and code for the preprint online here:
 
 Please cite this compendium as:
 
-> Authors, (2022). *Compendium of R code and data for Bootstrap
+> Sankaran, Kris, (2022). *Compendium of R code and data for Bootstrap
 > Confidence Regions for Learned Feature Embeddings*. Accessed 30 Jan
 > 2022. Online at <https://github.com/krisrs1128/LFBCR>
 
